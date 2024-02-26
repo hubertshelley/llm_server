@@ -32,6 +32,7 @@ pub enum ChatMessage {
     /// A message from a tool.
     Tool(ToolMessage),
 }
+
 struct ChatMessages {
     system: SystemMessage,
     chat: Vec<ChatMessage>,

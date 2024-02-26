@@ -94,12 +94,12 @@ impl Stream for ChatModelStream {
                         1.1,
                         &self.all_tokens[start_at..],
                     )
-                    .map_err(|e| {
-                        SilentError::business_error(
-                            StatusCode::BAD_REQUEST,
-                            format!("failed to apply repeat penalty: {}", e),
-                        )
-                    })?
+                        .map_err(|e| {
+                            SilentError::business_error(
+                                StatusCode::BAD_REQUEST,
+                                format!("failed to apply repeat penalty: {}", e),
+                            )
+                        })?
                 };
                 let next_token = self.logits_processor.sample(&logits).map_err(|e| {
                     SilentError::business_error(
@@ -180,7 +180,7 @@ impl ChatModel {
         let mut model = self.model.clone();
 
         let mut logits_processor = LogitsProcessor::new(self.seed, temperature, top_p);
-        let start_prompt_processing = std::time::Instant::now();
+        let start_prompt_processing = Instant::now();
         let mut response = ChatCompletionResponse::new(request.model.clone());
         let mut choice = ChatCompletionChoice {
             finish_reason: Default::default(),
@@ -308,7 +308,7 @@ impl ChatModel {
                 tool_calls: vec![],
             },
         };
-        choice.message.content = Some(result);
+        choice.message.content = Some(result.clone());
         response.choices.push(choice);
         response.usage.prompt_tokens = tokens.len();
         response.usage.completion_tokens = sampled;
@@ -317,7 +317,7 @@ impl ChatModel {
             response: response.clone(),
             max_tokens: max_tokens.unwrap_or(4096),
             index: 0,
-            result: "".to_string(),
+            result,
             next_token,
             device: self.device.clone(),
             eos_token: self.eos_token,
@@ -357,7 +357,7 @@ pub(crate) fn init_model(args: ChatModelConfig) -> Result<ChatModel> {
     let tokenizer = Tokenizer::from_file(tokenizer_filename).map_err(E::msg)?;
 
     let mut file = std::fs::File::open(&model_path)?;
-    let start = std::time::Instant::now();
+    let start = Instant::now();
 
     let eos_token = token_id(&tokenizer, &chat_format.get_eos_token())?;
     println!("eos_token: {}", eos_token);
@@ -395,7 +395,7 @@ pub(crate) fn init_model(args: ChatModelConfig) -> Result<ChatModel> {
                 start.elapsed().as_secs_f32(),
             );
             println!("params: {:?}", model.hparams);
-            ModelWeights::from_ggml(model, gqa, &device)?
+            ModelWeights::from_ggml(model, gqa)?
         }
     };
     Ok(ChatModel {
@@ -407,6 +407,7 @@ pub(crate) fn init_model(args: ChatModelConfig) -> Result<ChatModel> {
         chat_format,
     })
 }
+
 #[cfg(test)]
 mod tests {
     use crate::models::chat::init_model;

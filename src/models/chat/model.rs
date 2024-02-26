@@ -94,12 +94,12 @@ impl Stream for ChatModelStream {
                         1.1,
                         &self.all_tokens[start_at..],
                     )
-                        .map_err(|e| {
-                            SilentError::business_error(
-                                StatusCode::BAD_REQUEST,
-                                format!("failed to apply repeat penalty: {}", e),
-                            )
-                        })?
+                    .map_err(|e| {
+                        SilentError::business_error(
+                            StatusCode::BAD_REQUEST,
+                            format!("failed to apply repeat penalty: {}", e),
+                        )
+                    })?
                 };
                 let next_token = self.logits_processor.sample(&logits).map_err(|e| {
                     SilentError::business_error(
